@@ -262,16 +262,11 @@ Reusable widget displaying:
 
 flutter pub get
 
-	2.	Run the app:
+	flutter pub get
 
 flutter run
 
-	3.	Select the Events tab to see the history feature in action.
-
-```bash
-flutter pub get
-flutter run
-```
+	flutter run
 
 ⸻
 
