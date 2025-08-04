@@ -2,7 +2,6 @@
 
 import 'dart:async';
 
-import 'package:gowagr/core/utils/map_extension.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/src/async_notifier.dart';
 
@@ -32,107 +31,93 @@ mixin PaginationController<T> on AsyncNotifierBase<PaginatedResponse<T>> {
 }
 
 class PaginatedRequest {
-  final int? page;
-  final int? size;
-  final int? totalPages;
-  final int? totalElements;
-  final int? numberOfElements;
+  final int page;
+  final int size;
 
-  PaginatedRequest({
-    this.page,
-    this.size,
-    this.totalPages,
-    this.totalElements,
-    this.numberOfElements,
+  const PaginatedRequest({
+    required this.page,
+    required this.size,
   });
 
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'page': page,
-      'size': size,
-      'totalPages': totalPages,
-      'totalElements': totalElements,
-      'numberOfElements': numberOfElements
-    }.removeNullValues;
-  }
+  Map<String, dynamic> toJson() => {
+        'page': page,
+        'size': size,
+      };
 }
 
 class PaginatedResponse<T> {
-  List<T> dataList;
-  String fieldName;
-  int? size;
-  int? page;
-  int? totalPages;
-  int? totalElements;
-  int? numberOfElements;
+  final List<T> dataList;
+  final String fieldName;
+  final int page;
+  final int size;
+  final int totalCount;
+  final int lastPage;
 
   PaginatedResponse({
     required this.dataList,
-    this.size,
-    this.page,
-    this.totalPages,
-    this.totalElements,
-    this.numberOfElements,
     required this.fieldName,
+    required this.page,
+    required this.size,
+    required this.totalCount,
+    required this.lastPage,
   });
 
+  bool get isCompleted => page >= lastPage;
+
+  PaginatedRequest nextPage() => PaginatedRequest(
+        page: page + 1,
+        size: size,
+      );
+
   PaginatedResponse<T> copyWith({
-    int? size,
-    int? page,
-    int? totalPages,
-    String? fieldName,
     List<T>? dataList,
-    int? totalElements,
-    int? numberOfElements,
+    int? page,
+    int? size,
+    int? totalCount,
+    int? lastPage,
+    String? fieldName,
   }) {
     return PaginatedResponse<T>(
-      size: size ?? this.size,
-      page: page ?? this.page,
       dataList: dataList ?? this.dataList,
       fieldName: fieldName ?? this.fieldName,
-      totalElements: totalElements ?? this.totalElements,
-      numberOfElements: numberOfElements ?? this.numberOfElements,
+      page: page ?? this.page,
+      size: size ?? this.size,
+      totalCount: totalCount ?? this.totalCount,
+      lastPage: lastPage ?? this.lastPage,
     );
   }
 
-  bool get isCompleted => page! >= (totalPages ?? 1);
-  PaginatedRequest nextPage() => PaginatedRequest(
-        page: (page ?? 0) + 1,
-        size: (size ?? 10) + 10,
-        totalPages: totalPages,
-        totalElements: totalElements,
-        numberOfElements: numberOfElements,
-      );
   factory PaginatedResponse.fromJson({
-    int? totalElements,
-    int? numberOfElements,
-    bool Function(T)? filter,
-    required String fieldName,
     required Map<String, dynamic> json,
+    required String fieldName,
     required T Function(Object?) dataFromJson,
-  }) =>
-      PaginatedResponse(
-        fieldName: fieldName,
-        dataList: filter == null
-            ? (json[fieldName] as List<dynamic>).map(dataFromJson).toList()
-            : (json[fieldName] as List<dynamic>)
-                .map(dataFromJson)
-                .toList()
-                .where(filter)
-                .toList(),
-        page: json['page']?['page'],
-        size: json['page']?['size'],
-        totalPages: json['page']?['totalPages'],
-        totalElements: json['page']?['totalElements'],
-        numberOfElements: json['page']?['numberOfElements'],
-      );
+    bool Function(T)? filter,
+  }) {
+    final pagination = Map<String, dynamic>.from(json['pagination'] ?? {});
+    final rawList =
+        (json[fieldName] as List<dynamic>? ?? []).map(dataFromJson).toList();
 
-  factory PaginatedResponse.empty() => PaginatedResponse(
-        page: 0,
-        size: 1,
-        dataList: [],
-        totalPages: 1,
-        totalElements: 1,
-        fieldName: 'data',
-      );
+    final filteredList =
+        filter != null ? rawList.where(filter).toList() : rawList;
+
+    return PaginatedResponse(
+      fieldName: fieldName,
+      dataList: filteredList,
+      page: pagination['page'] ?? 1,
+      size: pagination['size'] ?? 10,
+      totalCount: pagination['totalCount'] ?? 0,
+      lastPage: pagination['lastPage'] ?? 1,
+    );
+  }
+
+  factory PaginatedResponse.empty({String fieldName = 'events'}) {
+    return PaginatedResponse(
+      page: 1,
+      size: 10,
+      totalCount: 0,
+      lastPage: 1,
+      dataList: [],
+      fieldName: fieldName,
+    );
+  }
 }

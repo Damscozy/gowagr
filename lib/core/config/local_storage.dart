@@ -6,27 +6,51 @@ import 'package:gowagr/data/model/event_model.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 class HiveStorage {
-  static const _mainBoxName = 'app_hive';
-  static const _eventsBoxName = 'events';
+  static const _boxName = 'app_hive';
+  static const _watchlistKey = 'event_ids';
   static const _cachedEventsKey = 'cachedEvents';
+  static const _accessTokenKey = 'accessToken';
 
   static final _key = encrypt.Key.fromUtf8('16charslongkey!!');
   static final _iv = encrypt.IV.fromUtf8('16charslongiv!!!');
   static final _encrypter = encrypt.Encrypter(encrypt.AES(_key));
 
-  static Box<dynamic> box() => Hive.box(_mainBoxName);
+  static Box<dynamic> get _box => Hive.box(_boxName);
 
   static String get accessToken =>
-      box().get('accessToken', defaultValue: '') as String;
-  static set accessToken(String value) => box().put('accessToken', value);
+      _box.get(_accessTokenKey, defaultValue: '') as String;
+  static set accessToken(String value) => _box.put(_accessTokenKey, value);
+
+  static Future<Set<String>> getWatchlist() async {
+    final list = _box.get(_watchlistKey, defaultValue: <String>[]);
+    return Set<String>.from(list);
+  }
+
+  static Future<void> toggleWatchlist(String eventId) async {
+    final watchlist = Set<String>.from(
+      _box.get(_watchlistKey, defaultValue: <String>[]),
+    );
+
+    if (watchlist.contains(eventId)) {
+      watchlist.remove(eventId);
+    } else {
+      watchlist.add(eventId);
+    }
+
+    await _box.put(_watchlistKey, watchlist.toList());
+  }
+
+  static Future<bool> isInWatchlist(String eventId) async {
+    final watchlist = await getWatchlist();
+    return watchlist.contains(eventId);
+  }
 
   static Future<void> saveEventsModel(EventsModel eventsModel) async {
     try {
-      final eventsBox = await Hive.openBox(_eventsBoxName);
       final jsonString = jsonEncode(eventsModel.toJson());
       final encrypted = _encrypter.encrypt(jsonString, iv: _iv).base64;
 
-      await eventsBox.put(_cachedEventsKey, encrypted);
+      await _box.put(_cachedEventsKey, encrypted);
       log.d('Saved ${eventsModel.events.length} encrypted events to Hive');
     } catch (e, s) {
       log.e('Failed to save events', error: e, stackTrace: s);
@@ -34,10 +58,7 @@ class HiveStorage {
   }
 
   static EventsModel? getCachedEventsModel() {
-    if (!Hive.isBoxOpen(_eventsBoxName)) return null;
-
-    final eventsBox = Hive.box(_eventsBoxName);
-    final encrypted = eventsBox.get(_cachedEventsKey);
+    final encrypted = _box.get(_cachedEventsKey);
     if (encrypted == null) return null;
 
     try {
@@ -50,7 +71,6 @@ class HiveStorage {
     }
   }
 
-  /// One-line helper: cache events only if they are valid and not stale
   static Future<void> cacheEventsIfFresh(EventsModel? newData) async {
     if (newData == null || (newData.events.isEmpty)) {
       log.d('Skipping cache: No events to save');
@@ -69,9 +89,9 @@ class HiveStorage {
 
   static Future<void> clearAllData() async {
     final retainedData = <String, dynamic>{};
-    await box().clear();
+    await _box.clear();
     for (final entry in retainedData.entries) {
-      await box().put(entry.key, entry.value);
+      await _box.put(entry.key, entry.value);
     }
     log.d('Cleared all Hive data. Retained: $retainedData');
   }

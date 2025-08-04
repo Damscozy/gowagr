@@ -16,16 +16,36 @@ class EventViewModel extends Notifier<EventViewState> {
   EventApiImpl get _repo => ref.read(appRepoProvider);
 
   void updateSearchQuery(String query) {
-    state = state.copyWith(searchQuery: query, currentPage: 1);
-    fetchEvents();
-  }
-
-  void updateCategory(EventCategory category) {
     state = state.copyWith(
-      selectedCategory: category,
+      searchQuery: query,
       currentPage: 1,
     );
     fetchEvents();
+  }
+
+  void updateCategory(EventCategory category) async {
+    state = state.copyWith(selectedCategory: category, currentPage: 1);
+
+    if (category == EventCategory.watchlist) {
+      final watchlistIds = await HiveStorage.getWatchlist();
+      final allCachedEvents = HiveStorage.getCachedEventsModel()?.events ?? [];
+      final filteredEvents =
+          allCachedEvents.where((e) => watchlistIds.contains(e.id)).toList();
+
+      state = state.copyWith(
+        eventsModel: EventsModel(events: filteredEvents),
+      );
+      return;
+    }
+
+    try {
+      await fetchEvents();
+    } catch (_) {
+      final cached = HiveStorage.getCachedEventsModel();
+      if (cached != null) {
+        state = state.copyWith(eventsModel: cached);
+      }
+    }
   }
 
   void resetPagination() async {
@@ -46,7 +66,6 @@ class EventViewModel extends Notifier<EventViewState> {
   Future<void> fetchEvents({bool loadMore = false}) async {
     if (state.isLoadingEvents || (!state.hasMore && loadMore)) return;
 
-    // If first load, try cached data first
     if (!loadMore && state.eventsModel == null) {
       final cached = HiveStorage.getCachedEventsModel();
       if (cached != null && cached.events.isNotEmpty == true) {
@@ -113,6 +132,32 @@ class EventViewModel extends Notifier<EventViewState> {
       state = state.copyWith(errorMessage: e.toString());
     } finally {
       state = state.copyWith(isLoadingEvents: false);
+    }
+  }
+
+  Future<void> refreshEvents() async {
+    final selectedCategory = state.selectedCategory;
+
+    if (selectedCategory == EventCategory.watchlist) {
+      final watchlistIds = await HiveStorage.getWatchlist();
+      final allCachedEvents = HiveStorage.getCachedEventsModel()?.events ?? [];
+      final filteredEvents =
+          allCachedEvents.where((e) => watchlistIds.contains(e.id)).toList();
+
+      state = state.copyWith(
+        eventsModel: EventsModel(events: filteredEvents),
+      );
+      return;
+    }
+
+    try {
+      await fetchEvents();
+    } catch (e) {
+      log.e("Refresh failed, using cache", error: e);
+      final cached = HiveStorage.getCachedEventsModel();
+      if (cached != null) {
+        state = state.copyWith(eventsModel: cached);
+      }
     }
   }
 }

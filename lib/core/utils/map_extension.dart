@@ -6,6 +6,16 @@ extension MapExtension<K, V> on Map<K, V> {
   }
 }
 
+String formatCurrency(bool isNGN, num value) {
+  final currencySymbol = isNGN ? "₦" : "\$";
+
+  // If >= 1000, show in 'k' format
+  if (value >= 1000) {
+    return "$currencySymbol${(value / 1000).toStringAsFixed(0)}k";
+  }
+  return "$currencySymbol${value.toStringAsFixed(0)}";
+}
+
 String monthName(int month) {
   const months = [
     "",

@@ -1,13 +1,8 @@
-import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gowagr/core/config/local_storage.dart';
 import 'package:gowagr/core/utils/app_colors.dart';
 import 'package:gowagr/data/notifier/event_notifier.dart';
-import 'package:gowagr/data/state/event_state.dart';
-import 'package:gowagr/presentation/components/event_card.dart';
 import 'package:gowagr/presentation/widgets/events_widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -55,8 +50,7 @@ class _EventScreenState extends ConsumerState<EventScreen> {
   }
 
   Future<void> refreshView(EventViewModel notifier) async {
-    notifier.resetPagination();
-    await notifier.fetchEvents();
+    await notifier.refreshEvents();
   }
 
   @override
@@ -82,50 +76,11 @@ class _EventScreenState extends ConsumerState<EventScreen> {
               SizedBox(height: 10.h),
               buildCategorySelector(ref, state, notifier),
               Expanded(
-                child: _buildEventList(state),
+                child: buildEventList(state, _scrollController),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildEventList(EventViewState state) {
-    if (state.isLoadingEvents && (state.eventsModel?.events.isEmpty ?? true)) {
-      return _buildLoader();
-    }
-
-    if (state.eventsModel?.events.isEmpty ?? true) {
-      return const Center(child: Text("No events found"));
-    }
-
-    return ListView.builder(
-      controller: _scrollController,
-      padding: EdgeInsets.all(16.sp),
-      itemCount:
-          state.eventsModel!.events.length + (state.isLoadingEvents ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == state.eventsModel!.events.length &&
-            state.isLoadingEvents) {
-          return _buildLoader();
-        }
-        final event = state.eventsModel!.events[index];
-        return Padding(
-          padding: EdgeInsets.only(bottom: 16.h),
-          child: EventCard(event: event),
-        );
-      },
-    );
-  }
-
-  Widget _buildLoader() {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.w),
-      child: Center(
-        child: Platform.isIOS
-            ? CupertinoActivityIndicator(color: AppColors.primary)
-            : CircularProgressIndicator(color: AppColors.primary),
       ),
     );
   }

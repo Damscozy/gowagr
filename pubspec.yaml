@@ -22,8 +22,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   device_info_plus: ^11.3.0
   flutter_screenutil: ^5.9.3
+
+  
   flutter_svg: ^2.2.0
   path_provider: ^2.1.5
+  cached_network_image: ^3.4.1
   
 
 dev_dependencies:

@@ -15,5 +15,6 @@ class AppColors {
   static const borderColor = Color(0xFFEFF1F4);
   static const lightBlueColor = Color(0xFF98A8C1);
   static const categoryColor = Color(0xFFECEFF2);
+  static const marketColor = Color(0xFF7387A6);
   static const backgroundColor = Color(0xFFFBFBFB);
 }
