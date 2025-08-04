@@ -75,19 +75,19 @@ class _SingleEventCardState extends State<SingleEventCard> {
                 ),
                 profitColor: AppColors.greenColor,
               ),
-              _buildProfitColumn(
-                cost: formatCurrency(
-                  widget.event.supportedCurrencies
-                      .contains(SupportedCurrency.ngn),
-                  widget.event.markets.first.noPriceForEstimate ?? 0,
-                ),
-                profit: formatCurrency(
-                  widget.event.supportedCurrencies
-                      .contains(SupportedCurrency.ngn),
-                  widget.event.markets.first.noProfitForEstimate ?? 0,
-                ),
-                profitColor: AppColors.greenColor,
-              ),
+              // _buildProfitColumn(
+              //   cost: formatCurrency(
+              //     widget.event.supportedCurrencies
+              //         .contains(SupportedCurrency.ngn),
+              //     widget.event.markets.first.noPriceForEstimate ?? 0,
+              //   ),
+              //   profit: formatCurrency(
+              //     widget.event.supportedCurrencies
+              //         .contains(SupportedCurrency.ngn),
+              //     widget.event.markets.first.noProfitForEstimate ?? 0,
+              //   ),
+              //   profitColor: AppColors.redColor,
+              // ),
             ],
           ),
           SizedBox(height: 12.h),

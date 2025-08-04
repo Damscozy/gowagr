@@ -2,55 +2,69 @@ import 'dart:io';
 
 import 'package:logger/logger.dart';
 
-final log = Logger(printer: PrettyPrinter());
+final log = Logger(
+  printer: PrettyPrinter(
+    methodCount: 2,
+    errorMethodCount: 5,
+    lineLength: 80,
+    colors: true,
+    printEmojis: true,
+    dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+  ),
+);
 
 class LoggerService {
-  static final log = Logger(printer: PrettyPrinter());
+  static final _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 2,
+      errorMethodCount: 5,
+      lineLength: 80,
+      colors: true,
+      printEmojis: true,
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+    ),
+  );
 
   static void logInfo(String message) {
-    log.i(message);
+    _logger.i("Adedamola ➜ $message");
   }
 
   static void logError({
-    required error,
+    required dynamic error,
     StackTrace? stackTrace,
     String? reason,
     dynamic errorCode,
-  }) async {
-    log.e(
-      error.toString(),
+  }) {
+    _logger.e(
+      "Adedamola ❌ ${error.toString()}",
       stackTrace: stackTrace,
       error: error,
     );
+
     try {
+      // Example: Crashlytics integration
       // await FirebaseCrashlytics.instance.recordError(
       //   error,
       //   stackTrace,
-      //   reason: reason != null
-      //       ? "${errorCode ?? 'unknown'},Device:$deviceType -$reason"
-      //       : 'unknown error,',
+      //   reason: "${errorCode ?? 'unknown'}, Device: $deviceType - ${reason ?? ''}",
       //   fatal: true,
       // );
     } catch (e) {
-      log.e(e.toString());
+      _logger.e("Adedamola ❌ Failed to send error to Crashlytics: $e");
     }
   }
 
   static void logWarning(String message) {
-    log.w(message);
+    _logger.w("Adedamola ⚠️ $message");
   }
 
   static void d(String message) {
-    log.d(message);
+    _logger.d("Adedamola 🛠 $message");
   }
 
   static String get deviceType {
-    if (Platform.isAndroid) {
-      return 'Android';
-    } else if (Platform.isIOS) {
-      return 'IOS';
-    } else {
-      return 'Unknown';
-    }
+    if (Platform.isAndroid) return 'Android';
+    if (Platform.isIOS) return 'iOS';
+    return 'Unknown';
   }
 }
